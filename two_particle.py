@@ -1,13 +1,12 @@
+from __future__ import annotations #For type hinting "not yet declared" classes
 import sys
 import pygame
-from queue import PriorityQueue
 import copy
 from pygame import Vector2
 from pygame.typing import ColorLike 
 from enum import Enum
 import numpy as np
 import heapq
-
 
 
 class CollisionType(Enum):
@@ -38,23 +37,16 @@ class WallCollision:
 
 class ParticleCollision:    
     def __init__(self, 
-                 partner                   = None,               #Particle is not declared yet, lets take advantage of pythons dynamic typing!
-                 time: float               = sys.float_info.max):
-                #  deltaVel_self: Vector2    = None,
-                #  deltaVel_partner: Vector2 = None):
+                 partner: Particle = None,                
+                 time: float       = sys.float_info.max):
         
         self.partner          = partner
         self.time             = time
-        # self.deltaVel_self    = deltaVel_self
-        # self.deltaVel_partner = deltaVel_partner
         
-    def set(self, partner, time) -> None:
-    # def set(self, partner, time, deltaVel_self, deltaVel_partner) -> None:
+    def set(self, partner, time: float) -> None:
         self.partner          = partner
         self.time             = time        
-        # self.deltaVel_self    = deltaVel_self
-        # self.deltaVel_partner = deltaVel_partner
-        
+
     def reset(self) -> None:
         self.partner           = None
         self.time              = sys.float_info.max
@@ -99,8 +91,8 @@ class Particle:
                  radius: float      = 20.0,
                  mass: float        = 1):
         
-        self.position = copy.copy(position)
-        self.velocity = copy.copy(velocity)
+        self.position = position
+        self.velocity = velocity
         self.radius   = radius
         self.color    = color
 
@@ -110,33 +102,27 @@ class Particle:
         self.wallCollision     = WallCollision()
         self.particleCollision = ParticleCollision()
         
-    def setLastCollisionTime(self, systemTime) -> None:
-        self.lastCollisionTime = systemTime
+    def getCollisionTime(self) -> float:
+        return min(self.wallCollision.time, self.particleCollision.time)
+        
+    # Overload < && > operators for priority Queue/heapq.
+    def __gt__(self, other: Particle):
+        return self.getCollisionTime() > other.getCollisionTime()
+
+    def __lt__(self, other: Particle):
+        return self.getCollisionTime() < other.getCollisionTime()
     
     def update(self, dt: float) -> None:
         self.position += dt*self.velocity
 
-    def draw(self, screen) -> None:
+    def draw(self, screen: pygame.Surface) -> None:
         pygame.draw.circle(screen, 
-                            self.color,
-                            self.position,
-                            self.radius)
+                           self.color,
+                           self.position,
+                           self.radius)
         
-    def getWallCollisionTime(self) -> float:
-        return self.wallCollision.time
-    
-    def getParticleCollisionTime(self) -> float:
-        return self.particleCollision.time
-    
-    def getCollisionTime(self) -> float:
-        return min(self.getParticleCollisionTime(), self.getWallCollisionTime())
-        
-    # Overload < && > operators for priority Queue/heapq.
-    def __gt__(self, other):
-        return self.getCollisionTime() > other.getCollisionTime()
-
-    def __lt__(self, other):
-        return self.getCollisionTime() < other.getCollisionTime()
+    def setLastCollisionTime(self, systemTime: float) -> None:
+        self.lastCollisionTime = systemTime
         
     def setCollisionType(self) -> None:
         if self.particleCollision.time < self.wallCollision.time:
@@ -144,12 +130,12 @@ class Particle:
         else:
             self.collisionType = CollisionType.WALL
 
-    
     def computeBoxCollisionTime(self, box: BoundingBox, systemTime: float) -> None:
         self.wallCollision.reset()
         distance: float = 0
         colTime: float  = -1
         
+        # handle up/down box collision
         if self.velocity.y < 0:
             distance = abs(self.position.y - self.radius - box.top )
             colTime  = distance/abs(self.velocity.y) + systemTime
@@ -160,7 +146,8 @@ class Particle:
             colTime  = distance/abs(self.velocity.y) + systemTime
             if colTime < self.wallCollision.time:
                 self.wallCollision.set(WallSide.BOTTOM, colTime)
-                
+        
+        # handle left/right box collision
         if self.velocity.x > 0:
             distance = abs(box.right - (self.position.x + self.radius))
             colTime  = distance/abs(self.velocity.x) + systemTime
@@ -189,8 +176,7 @@ class Particle:
                 self.position.x  = box.left + self.radius
         
 
-
-    def getParticleCollisionInfo(self, otherParticle, systemTime: float) -> ParticleCollision:
+    def getTwoParticleCollisionInfo(self, otherParticle: Particle, systemTime: float) -> ParticleCollision:
         dR: Vector2  = otherParticle.position - self.position
         dV: Vector2  = otherParticle.velocity - self.velocity
         sigma: float = otherParticle.radius   + self.radius
@@ -201,20 +187,18 @@ class Particle:
         particleCollision = ParticleCollision()
         if b < 0 and Discriminant >= 0:    
             t_col    =  (-b - np.sqrt(Discriminant))/(dV.magnitude_squared())
-            dV_self  = + 2*(otherParticle.mass/(self.mass + otherParticle.mass)) * (b/(sigma**2))*dR.normalize()
-            dV_other = - 2*(self.mass         /(self.mass + otherParticle.mass)) * (b/(sigma**2))*dR.normalize()
-            particleCollision.set(otherParticle, t_col + systemTime, dV_self, dV_other)
+            particleCollision.set(otherParticle, t_col + systemTime)
         return particleCollision
     
     def computeParticleCollisionTime(self, particles: list, systemTime: float) -> None:
         self.particleCollision.reset()
         for p in particles:
             if p is not self:
-                newCollision = self.getParticleCollisionInfo(p, systemTime)
+                newCollision = self.getTwoParticleCollisionInfo(p, systemTime)
                 if newCollision.time < self.particleCollision.time:
                     self.particleCollision = newCollision
         
-    def getCollisionPartner(self):
+    def getCollisionPartner(self) -> Particle:
         return self.particleCollision.partner  
                 
     def isParticleCollisionValid(self) -> bool:
@@ -235,8 +219,11 @@ class Particle:
         
 
 class CollisionSchedule:
-    def __init__(self):
-        self.heap = []
+    def __init__(self, 
+                 _list: list = []):
+        self.heap = _list
+        if self.heap:
+            heapq.heapify(self.heap)
     
     def put(self, particle: Particle) -> None:
         heapq.heappush(self.heap, particle)
@@ -282,17 +269,16 @@ if __name__ == "__main__":
                                 velocity=Vector2(435/2, -75/2),
                                 color="green")
         
-    particles  = [particleA, particleB, particleC]
-    EventQueue = CollisionSchedule() #PriorityQueue()
+    particles      = [particleA, particleB, particleC]
+    collisionQueue = CollisionSchedule() #PriorityQueue()
 
     for p in particles:
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
         p.setCollisionType()
-        EventQueue.put(p)
-        # EventQueue.put((p.getCollisionTime(), p))
+        collisionQueue.put(p)
     
-    collisionParticle = EventQueue.get()
+    collisionParticle = collisionQueue.get()
     
     while running:
         for event in pygame.event.get():
@@ -309,35 +295,38 @@ if __name__ == "__main__":
             if collisionParticle.collisionType == CollisionType.WALL:
                 collisionParticle.resolveBoxCollision(box)
             elif collisionParticle.collisionType == CollisionType.PARTICLE:
+                # Check if partner particle has not been updated in the meantime
                 if  collisionParticle.isParticleCollisionValid():
                     print(f"Collision!")
-                    # B1) resolve particle Collision
+                    # resolve particle Collision
                     collisionParticle.resolveParticleCollision()    
                     partner = collisionParticle.getCollisionPartner()
                     
-                    # B2) update partner:
+                    # update partner:
                     partner.computeBoxCollisionTime(box, systemTime)
                     partner.computeParticleCollisionTime(particles, systemTime)
+                    partner.setLastCollisionTime(systemTime)
                     partner.setCollisionType()
-                    EventQueue.heapify()
+                    
+                    # rearrange Queue
+                    collisionQueue.heapify()
                     
                 else: #if partner particle has been updated in the meantime
-                    # nothing
                     print("[void Collision], doing nothing")
                 
             # record time of last event, important for comparing particles.
             collisionParticle.setLastCollisionTime(systemTime)
             
-            # Compute new collision time for the this particle
+            # Compute new collision time for this particle
             collisionParticle.computeBoxCollisionTime(box, systemTime)
             collisionParticle.computeParticleCollisionTime(particles, systemTime)
             collisionParticle.setCollisionType()
             
             # put it back in the priority queue
-            EventQueue.put(collisionParticle)
+            collisionQueue.put(collisionParticle)
             
             # get new particle with highest priority
-            collisionParticle = EventQueue.get()
+            collisionParticle = collisionQueue.get()
     
             name = ""
             if collisionParticle == particleA:
