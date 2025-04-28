@@ -18,7 +18,7 @@ if __name__ == "__main__":
     systemTime: float   = 0.0
     particleNumber: int = 30
     minVel: float       = -200.0
-    maxVel: float       = 200.0
+    maxVel: float       = 200.0 
     
     screen_size   = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
