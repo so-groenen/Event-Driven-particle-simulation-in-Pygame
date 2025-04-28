@@ -44,6 +44,12 @@ class Particle:
                            self.color,
                            self.position,
                            self.radius)
+    
+    # used for monteCarlo
+    def isCollision(self, other: Particle) -> bool:
+        dist    = (self.position - other.position).magnitude()
+        minDist = (self.radius   + other.radius)
+        return (dist <= minDist)
         
     def setLastCollisionTime(self, systemTime: float) -> None:
         self.lastCollisionTime = systemTime
@@ -133,7 +139,7 @@ class Particle:
         
         dR: Vector2  = partnerParticle.position - self.position
         dV: Vector2  = partnerParticle.velocity - self.velocity
-        sigma: float = dR.magnitude() #partnerParticle.radius + self.radius
+        sigma: float = dR.magnitude() #partnerParticle.radius + self.radius # 
         b: float     = dR.dot(dV)
    
         dV_self  = + 2*(partnerParticle.mass/(self.mass + partnerParticle.mass)) * (b/(sigma))*dR.normalize()
@@ -147,3 +153,22 @@ class Particle:
         y = np.random.randint(low, high)
         return Vector2(x, y)
 
+    @classmethod
+    def isCollisionWithList(cls, particle: Particle, particleList: list[Particle]):
+        isCollision: bool = False
+        for p in particleList:
+            isCollision = particle.isCollision(p)
+            if isCollision:
+                break
+        return isCollision
+    
+    @classmethod
+    def MonteCarloSortInBox(cls, ParticleList: list[Particle], box: BoundingBox):
+        myList = []
+        for p in ParticleList:
+            p.position = box.getRandVec2(p.radius)
+            while cls.isCollisionWithList(p, myList):
+                p.position = box.getRandVec2(p.radius)
+            myList.append(p)
+            
+        ParticleList = myList

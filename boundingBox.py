@@ -30,8 +30,8 @@ class BoundingBox(pygame.Rect):
         pygame.draw.rect(self.screen, self.color, self, self.thickness)
     
     def getRandVec2(self, radius: float) -> Vector2:
-        x = np.random.randint(self.left + radius, self.right - radius)
-        y = np.random.randint(self.top + radius, self.bottom - radius)
+        x = np.random.randint(self.getLeft() + radius, self.getRight() - radius)
+        y = np.random.randint(self.getTop() + radius, self.getBottom() - radius)
         return Vector2(x, y)
 
     def getTop(self) -> float:

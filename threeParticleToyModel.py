@@ -9,33 +9,35 @@ from collisionSchedule import CollisionSchedule
 if __name__ == "__main__":
 
     pygame.init()
-    screen         = pygame.display.set_mode((1024, 480))
-    clock          = pygame.time.Clock()
-    running        = True
-    fps            = 120.0
-    dt             = 1 / fps
-    radius         = 5
-    systemTime     = 0
-    particleNumber = 40
-    minVel         = -200.0
-    maxVel         = 200.0
-    
+    screen        = pygame.display.set_mode((1024, 480))
+    clock         = pygame.time.Clock()
+    running       = True
+    dt            = 0
+    radius        = 20
+    systemTime    = 0
     screen_size   = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
                                 topLeft   = 0.2*screen_size,
                                 color     = "red",
                                 thickness = 10)
     
-        
-    particles      = [Particle(position = Vector2(0, 0),
-                                velocity = Particle.getRandVelocity(minVel, maxVel),
+    particleA     = Particle   (position = box.getRandVec2(radius),
+                                velocity = Particle.getRandVelocity(-200, 200),
+                                color    = "red",
+                                radius   = radius)
+    particleB     = Particle   (position = box.getRandVec2(radius),
+                                velocity = Particle.getRandVelocity(-200, 200),
                                 color    = "blue",
-                                radius   = radius) 
-                      for _ in range(particleNumber)]
+                                radius   = radius)
 
-    Particle.MonteCarloSortInBox(particles, box)
+    particleC     = Particle   (position = box.getRandVec2(radius),
+                                velocity = Particle.getRandVelocity(-200, 200),
+                                color    = "green",
+                                radius   = radius)
+        
+    particles      = [particleA, particleB, particleC]
+    collisionQueue = CollisionSchedule() #PriorityQueue()
 
-    collisionQueue = CollisionSchedule()
     for p in particles:
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
@@ -53,7 +55,7 @@ if __name__ == "__main__":
             p.update(dt)
 
 
-        if (systemTime + dt/2.0) >= collisionParticle.getCollisionTime():
+        if (systemTime + dt) >= collisionParticle.getCollisionTime():
             # Handle priority collision depending if it is a wall reflection || particle collision
             
             if collisionParticle.collisionType == CollisionType.WALL:
@@ -61,12 +63,12 @@ if __name__ == "__main__":
             elif collisionParticle.collisionType == CollisionType.PARTICLE:
                 # Check if partner particle has not been updated in the meantime
                 if  collisionParticle.isParticleCollisionValid():
-
-                    # resolve particle Collision (also handle partner velocity change)
+                    print(f"Collision!")
+                    # resolve particle Collision
                     collisionParticle.resolveParticleCollision()    
-
+                    partner = collisionParticle.getCollisionPartner()
+                    
                     # Record collision time for partner collisions...
-                    partner = collisionParticle.getCollisionPartner()                    
                     partner.setLastCollisionTime(systemTime)
                     
                     # & compute futur collisions:
@@ -76,7 +78,8 @@ if __name__ == "__main__":
                     
                     # rearrange Queue
                     collisionQueue.heapify()
-                    
+                else: 
+                    print("[invalid collision], updating & getting new event.")
                 
             # record time of last event, important for comparing collision validity
             collisionParticle.setLastCollisionTime(systemTime)
@@ -89,7 +92,25 @@ if __name__ == "__main__":
             # Put "old" particle back in & get "new" particle with highest priority:
             collisionParticle = collisionQueue.pushPop(collisionParticle)
     
-   
+            name = ""
+            if collisionParticle == particleA:
+                name = "Red"
+            elif collisionParticle == particleB:
+                name = "Blue"
+            elif collisionParticle == particleC:
+                name = "Green"   
+                
+            if collisionParticle.collisionType == CollisionType.WALL:
+                print(f"NEXT: {name}: {collisionParticle.collisionType} with {collisionParticle.wallCollision.side}")            
+            else:
+                partner = ""
+                if collisionParticle.particleCollision.partner == particleA:
+                    partner = "Red"
+                elif collisionParticle.particleCollision.partner == particleB:
+                    partner = "Blue"
+                elif collisionParticle.particleCollision.partner == particleC:
+                    partner = "Green"   
+                print(f"NEXT: {name}: {collisionParticle.collisionType} with {partner}")    
 
         screen.fill("purple")
         box.draw()
@@ -98,7 +119,6 @@ if __name__ == "__main__":
                     
         pygame.display.flip()
 
-        # dt          = clock.tick(60) / 1000
-        clock.tick(fps)
+        dt         = clock.tick(60) / 1000
         systemTime += dt
     pygame.quit()
