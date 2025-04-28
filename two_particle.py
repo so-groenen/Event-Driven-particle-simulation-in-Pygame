@@ -78,10 +78,23 @@ class BoundingBox(pygame.Rect):
     def draw(self):
         pygame.draw.rect(self.screen, self.color, self, self.thickness)
     
-    def getRandVec2(self) -> Vector2:
-        x = np.random.randint(self.left, self.right)
-        y = np.random.randint(self.top, self.bottom)
+    def getRandVec2(self, radius: float) -> Vector2:
+        x = np.random.randint(self.left + radius, self.right - radius)
+        y = np.random.randint(self.top + radius, self.bottom - radius)
         return Vector2(x, y)
+
+    def getTop(self) -> float:
+        return box.top + box.thickness
+    
+    def getBottom(self) -> float:
+        return box.bottom - box.thickness
+    
+    def getRight(self) -> float:
+        return box.right - box.thickness
+    
+    def getLeft(self) -> float:
+        return box.left + box.thickness
+    
 
 class Particle:
     def __init__(self,
@@ -137,24 +150,24 @@ class Particle:
         
         # handle up/down box collision
         if self.velocity.y < 0:
-            distance = abs(self.position.y - self.radius - box.top )
+            distance = abs((self.position.y - self.radius) - box.getTop())
             colTime  = distance/abs(self.velocity.y) + systemTime
             if colTime < self.wallCollision.time:
                 self.wallCollision.set(WallSide.TOP, colTime)
         elif self.velocity.y > 0:
-            distance = abs(self.position.y+self.radius - box.bottom)
+            distance = abs((self.position.y+self.radius) - box.getBottom()) #To be checked
             colTime  = distance/abs(self.velocity.y) + systemTime
             if colTime < self.wallCollision.time:
                 self.wallCollision.set(WallSide.BOTTOM, colTime)
         
         # handle left/right box collision
         if self.velocity.x > 0:
-            distance = abs(box.right - (self.position.x + self.radius))
+            distance = abs(box.getRight() - (self.position.x + self.radius))
             colTime  = distance/abs(self.velocity.x) + systemTime
             if colTime < self.wallCollision.time:
                 self.wallCollision.set(WallSide.RIGHT, colTime)
         elif self.velocity.x < 0:
-            distance = abs((self.position.x - self.radius) - box.left)
+            distance = abs((self.position.x - self.radius) - box.getLeft())
             colTime  = distance/abs(self.velocity.x) + systemTime
             if colTime < self.wallCollision.time:
                 self.wallCollision.set(WallSide.LEFT, colTime)
@@ -164,16 +177,16 @@ class Particle:
         match self.wallCollision.side:
             case WallSide.TOP:
                 self.velocity.y *= -1
-                self.position.y  = box.top + self.radius
+                self.position.y  = box.getTop() + self.radius 
             case WallSide.BOTTOM:
                 self.velocity.y *= -1
-                self.position.y  = box.bottom - self.radius
+                self.position.y  = box.getBottom() - self.radius  
             case WallSide.RIGHT:
                 self.velocity.x *= -1
-                self.position.x  = box.right - self.radius
+                self.position.x  = box.getRight() - self.radius  
             case WallSide.LEFT:
                 self.velocity.x *= -1
-                self.position.x  = box.left + self.radius
+                self.position.x  = box.getLeft() + self.radius  
         
 
     def getTwoParticleCollisionInfo(self, otherParticle: Particle, systemTime: float) -> ParticleCollision:
@@ -209,7 +222,7 @@ class Particle:
         
         dR: Vector2  = partnerParticle.position - self.position
         dV: Vector2  = partnerParticle.velocity - self.velocity
-        sigma: float = partnerParticle.radius + self.radius
+        sigma: float = dR.magnitude() #partnerParticle.radius + self.radius
         b: float     = dR.dot(dV)
    
         dV_self  = + 2*(partnerParticle.mass/(self.mass + partnerParticle.mass)) * (b/(sigma))*dR.normalize()
@@ -252,6 +265,7 @@ if __name__ == "__main__":
     clock         = pygame.time.Clock()
     running       = True
     dt            = 0
+    radius        = 20
     systemTime    = 0
     screen_size   = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
@@ -259,15 +273,19 @@ if __name__ == "__main__":
                                 color     = "red",
                                 thickness = 10)
     
-    particleA     = Particle   (position = box.getRandVec2(),
-                                velocity=Vector2(140/2, -125/2),
-                                color="red")
-    particleB     = Particle   (position = box.getRandVec2(),
-                                velocity=Vector2(-120/2, +235/2),
-                                color="blue")
-    particleC     = Particle   (position = box.getRandVec2(),
-                                velocity=Vector2(435/2, -75/2),
-                                color="green")
+    particleA     = Particle   (position = box.getRandVec2(radius),
+                                velocity = getRandVelocity(-200, 200),
+                                color    = "red",
+                                radius   = radius)
+    particleB     = Particle   (position = box.getRandVec2(radius),
+                                velocity = getRandVelocity(-200, 200),
+                                color    = "blue",
+                                radius   = radius)
+
+    particleC     = Particle   (position = box.getRandVec2(radius),
+                                velocity = getRandVelocity(-200, 200),
+                                color    = "green",
+                                radius   = radius)
         
     particles      = [particleA, particleB, particleC]
     collisionQueue = CollisionSchedule() #PriorityQueue()
