@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 from pygame import Vector2
+import pygame.pypm
 from pygame.typing import ColorLike
 
 
