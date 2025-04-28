@@ -4,7 +4,7 @@ from pygame import Vector2
 from collisionModules import CollisionType
 from boundingBox import BoundingBox
 from particle import Particle
-from collisionScheduele import CollisionSchedule
+from collisionSchedule import CollisionSchedule
  
 if __name__ == "__main__":
 
