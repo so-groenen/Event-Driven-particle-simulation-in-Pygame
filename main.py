@@ -9,16 +9,16 @@ from collisionSchedule import CollisionSchedule
 if __name__ == "__main__":
 
     pygame.init()
-    screen         = pygame.display.set_mode((1024, 480))
-    clock          = pygame.time.Clock()
-    running        = True
-    fps            = 120.0
-    dt             = 1 / fps
-    radius         = 5
-    systemTime     = 0
-    particleNumber = 40
-    minVel         = -200.0
-    maxVel         = 200.0
+    screen            = pygame.display.set_mode((1024, 480))
+    clock             = pygame.time.Clock()
+    running           = True
+    fps: float        = 200.0
+    dt: float         = 1.0 / fps
+    radius: float     = 5.0
+    systemTime: float = 0.0
+    particleNumber    = 50
+    minVel: float     = -200.0
+    maxVel: float     = 200.0
     
     screen_size   = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
@@ -26,7 +26,6 @@ if __name__ == "__main__":
                                 color     = "red",
                                 thickness = 10)
     
-        
     particles      = [Particle(position = Vector2(0, 0),
                                 velocity = Particle.getRandVelocity(minVel, maxVel),
                                 color    = "blue",
@@ -40,7 +39,7 @@ if __name__ == "__main__":
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
         p.setCollisionType()
-        collisionQueue.put(p)
+        collisionQueue.push(p)
     
     collisionParticle = collisionQueue.pop()
     
@@ -62,14 +61,14 @@ if __name__ == "__main__":
                 # Check if partner particle has not been updated in the meantime
                 if  collisionParticle.isParticleCollisionValid():
 
-                    # resolve particle Collision (also handle partner velocity change)
+                    # resolve particle Collision (also handles partner velocity change)
                     collisionParticle.resolveParticleCollision()    
 
                     # Record collision time for partner collisions...
                     partner = collisionParticle.getCollisionPartner()                    
                     partner.setLastCollisionTime(systemTime)
                     
-                    # & compute futur collisions:
+                    # & compute futur collisions for partner:
                     partner.computeBoxCollisionTime(box, systemTime)
                     partner.computeParticleCollisionTime(particles, systemTime)
                     partner.setCollisionType()
