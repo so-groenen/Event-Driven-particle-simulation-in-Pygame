@@ -17,7 +17,7 @@ if __name__ == "__main__":
     radius: float       = 5.0
     systemTime: float   = 0.0
     particleNumber: int = 30
-    minVel: float       = -200.0 
+    minVel: float       = -200.0
     maxVel: float       = 200.0
     
     screen_size   = Vector2    (screen.get_size())
