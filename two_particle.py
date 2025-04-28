@@ -1,7 +1,6 @@
-from __future__ import annotations #For type hinting "not yet declared" classes
+from __future__ import annotations
 import sys
 import pygame
-import copy
 from pygame import Vector2
 from pygame.typing import ColorLike 
 from enum import Enum
@@ -58,7 +57,7 @@ class BoundingBox(pygame.Rect):
                  screen: pygame.Surface,
                  topLeft: Vector2        = Vector2(0, 0), 
                  color: ColorLike        = "black",
-                 thickness: int          =1):
+                 thickness: int          = 1):
         
         self.topleftVec     = topLeft
         self.toprightVec    = Vector2(screen.get_width() - topLeft.x, 
