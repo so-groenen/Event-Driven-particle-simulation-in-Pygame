@@ -228,7 +228,7 @@ class CollisionSchedule:
     def put(self, particle: Particle) -> None:
         heapq.heappush(self.heap, particle)
         
-    def get(self) -> Particle:
+    def pop(self) -> Particle:
         return heapq.heappop(self.heap)
 
     def pushPop(self, particle: Particle) -> Particle:
@@ -278,7 +278,7 @@ if __name__ == "__main__":
         p.setCollisionType()
         collisionQueue.put(p)
     
-    collisionParticle = collisionQueue.get()
+    collisionParticle = collisionQueue.pop()
     
     while running:
         for event in pygame.event.get():
@@ -302,19 +302,20 @@ if __name__ == "__main__":
                     collisionParticle.resolveParticleCollision()    
                     partner = collisionParticle.getCollisionPartner()
                     
-                    # update partner:
+                    # Record collision time for partner collisions...
+                    partner.setLastCollisionTime(systemTime)
+                    
+                    # & compute futur collisions:
                     partner.computeBoxCollisionTime(box, systemTime)
                     partner.computeParticleCollisionTime(particles, systemTime)
-                    partner.setLastCollisionTime(systemTime)
                     partner.setCollisionType()
                     
                     # rearrange Queue
                     collisionQueue.heapify()
-                    
-                else: #if partner particle has been updated in the meantime
-                    print("[void Collision], doing nothing")
+                else: 
+                    print("[invalid collision], updating & getting new event.")
                 
-            # record time of last event, important for comparing particles.
+            # record time of last event, important for comparing collision validity
             collisionParticle.setLastCollisionTime(systemTime)
             
             # Compute new collision time for this particle
@@ -322,11 +323,8 @@ if __name__ == "__main__":
             collisionParticle.computeParticleCollisionTime(particles, systemTime)
             collisionParticle.setCollisionType()
             
-            # put it back in the priority queue
-            collisionQueue.put(collisionParticle)
-            
-            # get new particle with highest priority
-            collisionParticle = collisionQueue.get()
+            # Put "old" particle back in & get "new" particle with highest priority:
+            collisionParticle = collisionQueue.pushPop(collisionParticle)
     
             name = ""
             if collisionParticle == particleA:
