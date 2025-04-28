@@ -42,7 +42,6 @@ if __name__ == "__main__":
         collisionQueue.push(p)
     
     collisionParticle = collisionQueue.pop()
-    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

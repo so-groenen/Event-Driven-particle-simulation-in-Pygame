@@ -8,7 +8,6 @@ class CollisionSchedule:
         self.heap = _list
         if self.heap:
             heapq.heapify(self.heap)
-    
     def push(self, particle: Particle) -> None:
         heapq.heappush(self.heap, particle)
         

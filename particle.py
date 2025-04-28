@@ -44,7 +44,6 @@ class Particle:
                            self.color,
                            self.position,
                            self.radius)
-    
     # used for monteCarlo
     def isCollision(self, other: Particle) -> bool:
         dist    = (self.position - other.position).magnitude()

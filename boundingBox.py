@@ -12,6 +12,7 @@ class BoundingBox(pygame.Rect):
                  color: ColorLike        = "black",
                  thickness: int          = 1):
         
+        
         self.topleftVec     = topLeft
         self.toprightVec    = Vector2(screen.get_width() - topLeft.x, 
                                       topLeft.y)

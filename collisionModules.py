@@ -28,7 +28,6 @@ class WallCollision:
         self.side = WallSide.TOP
         self.time = sys.float_info.max
         
-
 class ParticleCollision:    
     def __init__(self, 
                  partner           = None,                
