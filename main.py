@@ -9,16 +9,16 @@ from collisionSchedule import CollisionSchedule
 if __name__ == "__main__":
 
     pygame.init()
-    screen            = pygame.display.set_mode((1024, 480))
-    clock             = pygame.time.Clock()
-    running           = True
-    fps: float        = 200.0
-    dt: float         = 1.0 / fps
-    radius: float     = 5.0
-    systemTime: float = 0.0
-    particleNumber    = 50
-    minVel: float     = -200.0
-    maxVel: float     = 200.0
+    screen              = pygame.display.set_mode((1024, 480))
+    clock               = pygame.time.Clock()
+    running: bool       = True
+    fps: float          = 200.0
+    dt: float           = 1.0 / fps
+    radius: float       = 5.0
+    systemTime: float   = 0.0
+    particleNumber: int = 30
+    minVel: float       = -200.0
+    maxVel: float       = 200.0
     
     screen_size   = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
