@@ -5,23 +5,14 @@ from collisionModules import CollisionType
 from boundingBox import BoundingBox
 from particle import Particle
 from collisionSchedule import CollisionSchedule
-
-DEBUG = False
+import debug
 
 def drawFps(screen: pygame.Surface, font: pygame.Font):
     fps   = str(int(clock.get_fps()))
     fps_t = font.render(fps , 1, pygame.Color("RED"))
     screen.blit(fps_t,(0,0))
      
-def DEBUGprint(string: str) -> None:
-    if DEBUG:
-        print(string)
-
-def DEBUGshowCollisionSchedule(dt: float, collisionQueue: CollisionSchedule, currentCollisionParticle: Particle) -> None:
-    if DEBUG and not dt:
-        CollisionSchedule.showParticle(currentCollisionParticle)
-        collisionQueue.showSchedule() 
- 
+debug.DEBUG = False
 if __name__ == "__main__":
 
     pygame.init()
@@ -29,11 +20,11 @@ if __name__ == "__main__":
     screen              = pygame.display.set_mode((1024, 480))
     clock               = pygame.time.Clock()
     running: bool       = True
-    fps: float          = 120.0
+    fps: float          = 1000
     radius: float       = 5
     systemTime: float   = 0.0
     dt: float           = 0.0    
-    particleNumber: int = 400
+    particleNumber: int = 150
     minVel: float       = -20
     maxVel: float       = 20 
     
@@ -49,21 +40,24 @@ if __name__ == "__main__":
                                 radius   = radius) 
                       for _ in range(particleNumber)]
 
+    # Set to 10: use the setPrecision method to change it. It is 1E-10 initially.
+    PrecisionDecimalPlaces  = particles[0].getPrecisionDecimalPlaces() 
+    
     Particle.MonteCarloSortInBox(particles, box)
     Particle.removeCenterOfMass(particles)
     collisionQueue = CollisionSchedule()
     
     lastColTime    = 0
     colTime        = 0
-    decimalPlaces  = particles[0].getPrecisionDecimalPlaces() # Set to 10, use the setPrecision method to change it. It is 1E-10 initially.
+
     for p in particles:
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
         p.setCollisionType()
         collisionQueue.push(p)
     
+    # First event:
     collisionParticle = collisionQueue.pop()
- 
     print("Simulation Start.")
     while running:
         for event in pygame.event.get():
@@ -71,22 +65,22 @@ if __name__ == "__main__":
                 running = False
 
         collisionTime = collisionParticle.getCollisionTime()
-        dt            = round(collisionTime-lastColTime, decimalPlaces) 
+        dt            = round(collisionTime-lastColTime, PrecisionDecimalPlaces) 
         systemTime   += dt
 
-        DEBUGprint(f"time since last collision: {dt}")
-        DEBUGshowCollisionSchedule(dt, collisionQueue, collisionParticle)
+        debug.logMsg(f"time since last collision: {dt}")
+        debug.showCollisionSchedule(dt, collisionQueue, collisionParticle)
         
         for p in particles:
             p.update(dt)
      
         if collisionParticle.collisionType == CollisionType.WALL:
             collisionParticle.resolveBoxCollision(box)
-            DEBUGprint("WALL COLLISION")
+            debug.logMsg("WALL COLLISION")
         elif collisionParticle.collisionType == CollisionType.PARTICLE:
             # Check if partner particle has not been updated in the meantime
             if collisionParticle.isParticleCollisionValid():
-                DEBUGprint("PARTICLE COLLISION")
+                debug.logMsg("PARTICLE COLLISION")
                 # resolve particle Collision (also handles partner velocity change)
                 collisionParticle.resolveParticleCollision()    
                 
@@ -102,7 +96,7 @@ if __name__ == "__main__":
                 # rearrange Queue
                 collisionQueue.heapify()
             else:
-                DEBUGprint("INVALID PARTICLE COLLISION")
+                debug.logMsg("INVALID PARTICLE COLLISION")
                 
                 
         # record time of last event, important for comparing collision validity

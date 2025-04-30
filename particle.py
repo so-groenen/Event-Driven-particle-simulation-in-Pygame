@@ -17,9 +17,9 @@ class Particle:
                  color: ColorLike   = "red",
                  radius: float      = 20.0,
                  mass: float        = 1):
-        # print(f" precision up to {PRECISION_NUMBER} decimal.")
-        print(f"Particle time measurment precision up to {self.precision}.")
-        print(f"Decimal = {self.precisionDecimalPlaces}.")
+
+        # print(f"Particle: time measurment precision up to {self.precision}.")
+        # print(f"Particle:  = {self.precisionDecimalPlaces} decimal places.")
 
         self.position = position
         self.velocity = velocity
@@ -34,7 +34,7 @@ class Particle:
     
     def setPrecision(self, precision):
         self.precision = precision
-        print(f"Precision set to {self.precision}")
+        print(f"Particle: Precision set to {self.precision}")
     
     def getPrecision(self) -> float:
         return self.precision
@@ -45,16 +45,16 @@ class Particle:
     
     def getCollisionTime(self) -> float:
         return min(self.wallCollision.time, self.particleCollision.time)
-        
+
     # Overload < && > operators for priority Queue/heapq.
     def __gt__(self, other: Particle):
-        # return self.getCollisionTime() > other.getCollisionTime()
-        return self.getCollisionTime() - other.getCollisionTime() > self.precision
+        return self.getCollisionTime() > other.getCollisionTime()
+        # return self.getCollisionTime() - other.getCollisionTime() > self.precision
 
 
     def __lt__(self, other: Particle):
-        # return self.getCollisionTime() < other.getCollisionTime()
-        return self.getCollisionTime() - other.getCollisionTime() < self.precision
+        
+        return self.getCollisionTime() < other.getCollisionTime()
 
     
     def update(self, dt: float) -> None:
@@ -72,7 +72,6 @@ class Particle:
         return (dist <= minDist)
         
     def setLastCollisionTime(self, systemTime: float) -> None:
-        # self.lastCollisionTime = systemTime 
         self.lastCollisionTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
 
         

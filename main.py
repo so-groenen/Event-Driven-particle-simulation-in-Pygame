@@ -5,14 +5,14 @@ from collisionModules import CollisionType
 from boundingBox import BoundingBox
 from particle import Particle
 from collisionSchedule import CollisionSchedule
+from debug import DEBUG, DEBUG_print, DEBUG_showCollisionSchedule
 
 def drawFps(screen: pygame.Surface, font: pygame.Font):
     fps   = str(int(clock.get_fps()))
     fps_t = font.render(fps , 1, pygame.Color("RED"))
     screen.blit(fps_t,(0,0))
- 
 
- 
+DEBUG = False
 if __name__ == "__main__":
 
     pygame.init()
