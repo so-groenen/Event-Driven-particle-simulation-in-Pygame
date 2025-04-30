@@ -22,22 +22,24 @@ class Particle:
         self.radius   = radius
         self.color    = color
 
-        self.lastUpdatedTime = 0  #lastUpdatedTime
+        self.lastUpdatedTime = 0
         self.mass              = mass
         self.collisionType     = CollisionType.WALL
         self.wallCollision     = WallCollision()
         self.particleCollision = ParticleCollision()
     
+    
     def setPrecision(self, precision):
         self.precision = precision
-
     
     def getPrecision(self) -> float:
         return self.precision
     
-    
     def getPrecisionDecimalPlaces(self) -> float:
         return int(np.log10(1/self.precision))
+    
+    def setLastUpdatedTime(self, systemTime: float) -> None:
+        self.lastUpdatedTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
     
     def getCollisionTime(self) -> float:
         return min(self.wallCollision.time, self.particleCollision.time)
@@ -48,7 +50,6 @@ class Particle:
 
     def __lt__(self, other: Particle):
         return self.getCollisionTime() < other.getCollisionTime()
-
     
     def update(self, dt: float) -> None:
         self.position += dt*self.velocity
@@ -63,9 +64,6 @@ class Particle:
         dist    = (self.position - other.position).magnitude()
         minDist = (self.radius   + other.radius)
         return (dist <= minDist)
-        
-    def setLastUpdatedTime(self, systemTime: float) -> None:
-        self.lastUpdatedTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
 
         
     def setCollisionType(self) -> None:
@@ -183,10 +181,8 @@ class Particle:
             E += p.getEnergy()
         return E
     
-    
-    
     @classmethod
-    def drawEnergyAvg(cls, screen: pygame.Surface, font: pygame.Font, particleList, position: tuple):
+    def drawEnergyAvg(cls, screen: pygame.Surface, font: pygame.Font, particleList: list[Particle], position: tuple):
         txt       = str(f"{cls.getEnergyAvg(particleList):.2f}" )
         txtRender = font.render(txt , 1, pygame.Color("RED"))
         screen.blit(txtRender, position)
@@ -217,7 +213,7 @@ class Particle:
             V += p.velocity
         for p in ParticleList:
             p.velocity -= V/len(ParticleList)
-    
+
     
     @classmethod
     def MonteCarloSortInBox(cls, ParticleList: list[Particle], box: BoundingBox):

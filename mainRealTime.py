@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
                     # Record collision time for partner collisions...
                     partner = collisionParticle.getCollisionPartner()                    
-                    partner.setlastUpdatedTime(systemTime)
+                    partner.setLastUpdatedTime(systemTime)
                     
                     # & compute futur collisions for partner:
                     partner.computeBoxCollisionTime(box, systemTime)

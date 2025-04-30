@@ -17,17 +17,17 @@ if __name__ == "__main__":
     screen              = pygame.display.set_mode((1024, 480))
     clock               = pygame.time.Clock()
     running: bool       = True
-    fps: float          = 0 
-    radius: float       = 2.5
+    fps: float          = 0         # No fps limit
+    radius: float       = 3       
     systemTime: float   = 0.0
-    dt: float           = 0.0    
-    particleNumber: int = 750
+    dt: float           = 0.0       # the time between collisions is dynamical: each frame corresponds to a collision event
+    particleNumber: int = 500       
     minVel: float       = -20.0
     maxVel: float       = 20.0
     
-    screen_size   = Vector2    (screen.get_size())
+    screenSize    = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
-                                topLeft   = 0.1*screen_size,
+                                topLeft   = 0.1*screenSize,
                                 color     = "red",
                                 thickness = 5)
      
@@ -46,23 +46,25 @@ if __name__ == "__main__":
     colTime        = 0
 
     for p in particles:
-        p.setPrecision(1E-10)
+        p.setPrecision(1E-10)                                      # Precision is set to 10 decimal places, used for comparing particle "update times".
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
         p.setCollisionType()
         collisionQueue.push(p)
         
-    # Set to 10: use the setPrecision method to change it. It is 1E-10 initially.
+    # Precision is set to 10 decimal places. Used for rounding up time "dt" between collisions
     PrecisionDecimalPlaces  = particles[0].getPrecisionDecimalPlaces() 
+
     # First event:
     collisionParticle = collisionQueue.pop()
+    
     print("Simulation Start.")
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Event managing: We only draw Wall collisions & valid particle collisions, hence we loop until we get one.
+        # Event managing: We only draw wall collisions & valid particle collisions, hence we loop until we get one.
         while True:
             collisionTime = collisionParticle.getCollisionTime()
             dt            = round(collisionTime-lastColTime, PrecisionDecimalPlaces) 
@@ -103,7 +105,6 @@ if __name__ == "__main__":
         screen.fill("purple")
         box.draw()
         drawFps(screen, font, clock)
-        # Particle.drawEnergyAvg(screen, font, particles, (screen_size.x/2, 0))
 
         for p in particles:
             p.draw(screen)
