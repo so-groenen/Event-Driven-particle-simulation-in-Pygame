@@ -4,11 +4,11 @@ Event driven hard sphere elastic collisions using python Pygame-CE
 A small Pygame prototype to showcase Event driven hard sphere particle collisions.
 
 In the basic "time based" collisions, all pairs of particles are checked at all times for possible collisions (i.e. overlap), and handled right away.\
-This introduces lots of looping over many particles pairs, even though particle will spend most of their time moving in straight line.\
+This introduces lots of looping over many particles pairs, even though particle will spend most of their time moving in straight line.
 
 In contrast, in "event driven" collisions, a priority queue of all particle collisions is created BEFORE the simulation start. Particles store information about their "next collision time", the corresponding "partner particle", as well as a "last updated time".\ 
 The top "priority collision event" (ie, the particle with smallest collision time) is poped from the queue and the relevant particle-pair collision is handled.
-Futur collisions involving the particle & the partner are computed, and the two particles are pushed back into the queue, using their new "collision times" as priority indicator. 
+Futur collisions involving the particle & the partner are computed, and the two particles are pushed back into the queue, using their new "collision times" as priority indicator.\
 A new top priority "collision event" (particle) is then poped from the queue, and the process starts anew.\
 Collisions with wall are handled in a similar way.
 When one particle "A" is schedueled to collide with another particle "B", but "B" has in the meantime collided, keeping track of the "last updated time" of both particles permits us to label this collision as "invalid": We simply compute new collisions for "A" and put it back into the queue.
