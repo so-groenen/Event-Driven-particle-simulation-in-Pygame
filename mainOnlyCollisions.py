@@ -20,11 +20,11 @@ if __name__ == "__main__":
     screen              = pygame.display.set_mode((1024, 480))
     clock               = pygame.time.Clock()
     running: bool       = True
-    fps: float          = 1000
+    fps: float          = 60
     radius: float       = 5
     systemTime: float   = 0.0
     dt: float           = 0.0    
-    particleNumber: int = 150
+    particleNumber: int = 300
     minVel: float       = -20
     maxVel: float       = 20 
     
@@ -33,7 +33,7 @@ if __name__ == "__main__":
                                 topLeft   = 0.1*screen_size,
                                 color     = "red",
                                 thickness = 5)
-    
+     
     particles      = [Particle(position = Vector2(0, 0),
                                 velocity = Particle.getRandVelocity(minVel, maxVel),
                                 color    = "blue",
@@ -64,53 +64,43 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 running = False
 
-        collisionTime = collisionParticle.getCollisionTime()
-        dt            = round(collisionTime-lastColTime, PrecisionDecimalPlaces) 
-        systemTime   += dt
-
-        debug.logMsg(f"time since last collision: {dt}")
-        debug.showCollisionSchedule(dt, collisionQueue, collisionParticle)
-        
-        for p in particles:
-            p.update(dt)
+        # Event managing: We only draw Wall collisions & valid particle collisions, hence we loop until we get one.
+        while True:
+            collisionTime = collisionParticle.getCollisionTime()
+            dt            = round(collisionTime-lastColTime, PrecisionDecimalPlaces) 
+            systemTime   += dt
+            for p in particles:
+               p.update(dt)
      
-        if collisionParticle.collisionType == CollisionType.WALL:
-            collisionParticle.resolveBoxCollision(box)
-            debug.logMsg("WALL COLLISION")
-        elif collisionParticle.collisionType == CollisionType.PARTICLE:
-            # Check if partner particle has not been updated in the meantime
-            if collisionParticle.isParticleCollisionValid():
-                debug.logMsg("PARTICLE COLLISION")
-                # resolve particle Collision (also handles partner velocity change)
-                collisionParticle.resolveParticleCollision()    
+            if collisionParticle.collisionType == CollisionType.WALL:
+                debug.logMsg("WALL COLLISION")
+                collisionParticle.resolveBoxCollision(box)
+                collisionParticle.computeNextEvent(particles, box, systemTime)
                 
-                # Record collision time for partner collisions...
-                partner = collisionParticle.getCollisionPartner()               
-                partner.setLastCollisionTime(systemTime)
-                
-                # ...& compute futur collisions for partner:
-                partner.computeBoxCollisionTime(box, systemTime)
-                partner.computeParticleCollisionTime(particles, systemTime)
-                partner.setCollisionType()
-                
-                # rearrange Queue
-                collisionQueue.heapify()
-            else:
-                debug.logMsg("INVALID PARTICLE COLLISION")
-                
-                
-        # record time of last event, important for comparing collision validity
-        collisionParticle.setLastCollisionTime(systemTime)
-        lastColTime = systemTime
-
-        # Compute new collision time for this particle
-        collisionParticle.computeBoxCollisionTime(box, systemTime)
-        collisionParticle.computeParticleCollisionTime(particles, systemTime)
-        collisionParticle.setCollisionType()
-
-        # Put "old" particle back in & get "new" particle with highest priority:
-        collisionParticle = collisionQueue.pushPop(collisionParticle)
-
+                collisionParticle = collisionQueue.pushPop(collisionParticle)
+                lastColTime       = systemTime
+                break
+            elif collisionParticle.collisionType == CollisionType.PARTICLE:
+                # Check if partner particle has not been updated in the meantime
+                if collisionParticle.isParticleCollisionValid():
+                    debug.logMsg("PARTICLE COLLISION")
+                    collisionParticle.resolveParticleCollision()    
+                    partner = collisionParticle.getCollisionPartner()         
+                        
+                    partner.computeNextEvent(particles, box, systemTime)
+                    collisionQueue.heapify()
+                    
+                    collisionParticle.computeNextEvent(particles, box, systemTime)
+                    collisionParticle = collisionQueue.pushPop(collisionParticle)
+                    lastColTime       = systemTime
+                    break
+                else:
+                    debug.logMsg("INVALID PARTICLE COLLISION")  
+                    debug.showCollisionSchedule(dt, collisionQueue, collisionParticle)
+                    
+                    collisionParticle.computeNextEvent(particles, box, systemTime)
+                    collisionParticle = collisionQueue.pushPop(collisionParticle)
+                    lastColTime       = systemTime
 
         screen.fill("purple")
         box.draw()

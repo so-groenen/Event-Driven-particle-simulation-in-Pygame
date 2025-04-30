@@ -156,7 +156,16 @@ class Particle:
         partnerExist: bool   = (self.particleCollision.partner != None)
         hasBeenUpdated: bool = (self.lastCollisionTime >= self.particleCollision.partner.lastCollisionTime) #Precision is set when defining lastcollisionTime
         return (partnerExist and hasBeenUpdated)
-            
+        
+    def computeNextEvent(self, particles: list[Particle], box: BoundingBox, systemTime: float):
+        # record currentTime...
+        self.setLastCollisionTime(systemTime)
+        
+        # ...& compute futur collisions
+        self.computeBoxCollisionTime(box, systemTime)
+        self.computeParticleCollisionTime(particles, systemTime)
+        self.setCollisionType()
+    
     def resolveParticleCollision(self) -> None:
         partnerParticle = self.getCollisionPartner()
         
