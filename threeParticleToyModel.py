@@ -38,12 +38,13 @@ if __name__ == "__main__":
         
     particles      = [particleA, particleB, particleC]
     collisionQueue = CollisionSchedule() #PriorityQueue()
-
+    lastColTime    = 0
+    deltaColTime   = 0
     for p in particles:
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
         p.setCollisionType()
-        collisionQueue.put(p)
+        collisionQueue.push(p)
     
     collisionParticle = collisionQueue.pop()
     
@@ -58,12 +59,15 @@ if __name__ == "__main__":
 
         if (systemTime + dt) >= collisionParticle.getCollisionTime():
             # Handle priority collision depending if it is a wall reflection || particle collision
+            deltaColTime  = systemTime - lastColTime
             
             if collisionParticle.collisionType == CollisionType.WALL:
                 collisionParticle.resolveBoxCollision(box)
+                print(f"time since last col: {deltaColTime}")
             elif collisionParticle.collisionType == CollisionType.PARTICLE:
                 # Check if partner particle has not been updated in the meantime
                 if  collisionParticle.isParticleCollisionValid():
+                    print(f"time since last col: {deltaColTime}")
                     print(f"Collision!")
                     # resolve particle Collision
                     collisionParticle.resolveParticleCollision()    
@@ -90,6 +94,7 @@ if __name__ == "__main__":
             collisionParticle.computeParticleCollisionTime(particles, systemTime)
             collisionParticle.setCollisionType()
             
+            lastColTime  = systemTime
             # Put "old" particle back in & get "new" particle with highest priority:
             collisionParticle = collisionQueue.pushPop(collisionParticle)
     
@@ -117,6 +122,7 @@ if __name__ == "__main__":
         box.draw()
         for p in particles:
             p.draw(screen)
+
                     
         pygame.display.flip()
 

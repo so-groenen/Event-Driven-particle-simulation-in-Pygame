@@ -6,15 +6,21 @@ from pygame.typing import ColorLike
 from collisionModules import WallSide, CollisionType, ParticleCollision, WallCollision
 from boundingBox import BoundingBox
 
-
+# PRECISION = 1E-10
+# PRECISION_NUMBER = int(np.log10(1/PRECISION))
 class Particle:
+    precision = 1E-10
+    
     def __init__(self,
                  position: Vector2,
                  velocity: Vector2,
                  color: ColorLike   = "red",
                  radius: float      = 20.0,
                  mass: float        = 1):
-        
+        # print(f" precision up to {PRECISION_NUMBER} decimal.")
+        print(f"Particle time measurment precision up to {self.precision}.")
+        print(f"Decimal = {self.precisionDecimalPlaces}.")
+
         self.position = position
         self.velocity = velocity
         self.radius   = radius
@@ -25,16 +31,31 @@ class Particle:
         self.collisionType     = CollisionType.WALL
         self.wallCollision     = WallCollision()
         self.particleCollision = ParticleCollision()
-        
+    
+    def setPrecision(self, precision):
+        self.precision = precision
+        print(f"Precision set to {self.precision}")
+    
+    def getPrecision(self) -> float:
+        return self.precision
+    
+    
+    def getPrecisionDecimalPlaces(self) -> float:
+        return int(np.log10(1/self.precision))
+    
     def getCollisionTime(self) -> float:
         return min(self.wallCollision.time, self.particleCollision.time)
         
     # Overload < && > operators for priority Queue/heapq.
     def __gt__(self, other: Particle):
-        return self.getCollisionTime() > other.getCollisionTime()
+        # return self.getCollisionTime() > other.getCollisionTime()
+        return self.getCollisionTime() - other.getCollisionTime() > self.precision
+
 
     def __lt__(self, other: Particle):
-        return self.getCollisionTime() < other.getCollisionTime()
+        # return self.getCollisionTime() < other.getCollisionTime()
+        return self.getCollisionTime() - other.getCollisionTime() < self.precision
+
     
     def update(self, dt: float) -> None:
         self.position += dt*self.velocity
@@ -51,7 +72,9 @@ class Particle:
         return (dist <= minDist)
         
     def setLastCollisionTime(self, systemTime: float) -> None:
-        self.lastCollisionTime = systemTime
+        # self.lastCollisionTime = systemTime 
+        self.lastCollisionTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
+
         
     def setCollisionType(self) -> None:
         if self.particleCollision.time < self.wallCollision.time:
@@ -131,7 +154,9 @@ class Particle:
         return self.particleCollision.partner  
                 
     def isParticleCollisionValid(self) -> bool:
-        return self.lastCollisionTime >= self.particleCollision.partner.lastCollisionTime
+        partnerExist: bool   = (self.particleCollision.partner != None)
+        hasBeenUpdated: bool = (self.lastCollisionTime >= self.particleCollision.partner.lastCollisionTime) #Precision is set when defining lastcollisionTime
+        return (partnerExist and hasBeenUpdated)
             
     def resolveParticleCollision(self) -> None:
         partnerParticle = self.getCollisionPartner()
@@ -146,6 +171,29 @@ class Particle:
         self.velocity            += dV_self
         partnerParticle.velocity += dV_other
     
+    def getEnergy(self) -> float:
+        v2 = self.velocity.magnitude_squared()
+        return (0.5)*self.mass*v2
+    
+    @classmethod
+    def getTotalEnergy(cls, ParticleList: list[Particle]) -> float:
+        E = 0.0
+        for p in ParticleList:
+            E += p.getEnergy()
+        return E
+    
+    
+    
+    @classmethod
+    def drawEnergyAvg(cls, screen: pygame.Surface, font: pygame.Font, particleList, position: tuple):
+        txt       = str(f"{cls.getEnergyAvg(particleList):.2f}" )
+        txtRender = font.render(txt , 1, pygame.Color("RED"))
+        screen.blit(txtRender, position)
+            
+    @classmethod
+    def getEnergyAvg(cls, ParticleList: list[Particle]) -> float:
+        return cls.getTotalEnergy(ParticleList)/len(ParticleList)
+            
     @classmethod
     def getRandVelocity(cls, low: float, high: float) -> Vector2:
         x = np.random.randint(low, high)
@@ -160,6 +208,15 @@ class Particle:
             if isCollision:
                 break
         return isCollision
+    
+    @classmethod
+    def removeCenterOfMass(cls, ParticleList: list[Particle]) -> float:
+        V = Vector2(0.0, 0.0)
+        for p in ParticleList:
+            V += p.velocity
+        for p in ParticleList:
+            p.velocity -= V/len(ParticleList)
+    
     
     @classmethod
     def MonteCarloSortInBox(cls, ParticleList: list[Particle], box: BoundingBox):
