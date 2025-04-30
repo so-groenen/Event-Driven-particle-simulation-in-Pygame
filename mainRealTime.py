@@ -5,12 +5,8 @@ from collisionModules import CollisionType
 from boundingBox import BoundingBox
 from particle import Particle
 from collisionSchedule import CollisionSchedule
+from helper import drawFps
 import debug
-
-def drawFps(screen: pygame.Surface, font: pygame.Font):
-    fps   = str(int(clock.get_fps()))
-    fps_t = font.render(fps , 1, pygame.Color("RED"))
-    screen.blit(fps_t,(0,0))
 
 debug.DEBUG = False
 if __name__ == "__main__":
@@ -102,7 +98,7 @@ if __name__ == "__main__":
 
         screen.fill("purple")
         box.draw()
-        drawFps(screen, font)
+        drawFps(screen, font, clock)
         Particle.drawEnergyAvg(screen, font, particles, (screen_size.x/2, 0))
 
         for p in particles:

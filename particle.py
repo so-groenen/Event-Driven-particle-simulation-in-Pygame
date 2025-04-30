@@ -152,7 +152,7 @@ class Particle:
         
     def computeNextEvent(self, particles: list[Particle], box: BoundingBox, systemTime: float):
         # record currentTime...
-        self.setlastUpdatedTime(systemTime)
+        self.setLastUpdatedTime(systemTime)
         
         # ...& compute futur collisions
         self.computeBoxCollisionTime(box, systemTime)
@@ -197,8 +197,8 @@ class Particle:
             
     @classmethod
     def getRandVelocity(cls, low: float, high: float) -> Vector2:
-        x = np.random.randint(low, high) #I should change this to random uniform low + (high-low)*randuniform([0,1])
-        y = np.random.randint(low, high)
+        x = low + (high-low)*np.random.random_sample()
+        y = low + (high-low)*np.random.random_sample()
         return Vector2(x, y)
 
     @classmethod

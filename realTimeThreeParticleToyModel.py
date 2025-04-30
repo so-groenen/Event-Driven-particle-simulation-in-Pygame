@@ -5,6 +5,7 @@ from collisionModules import CollisionType
 from boundingBox import BoundingBox
 from particle import Particle
 from collisionSchedule import CollisionSchedule
+from helper import drawFps
 import debug
 
 
@@ -13,6 +14,7 @@ if __name__ == "__main__":
 
 
     pygame.init()
+    font          = pygame.font.SysFont("Arial" , 18 , bold = True)
     screen        = pygame.display.set_mode((1024, 480))
     clock         = pygame.time.Clock()
     running       = True
@@ -121,6 +123,7 @@ if __name__ == "__main__":
 
         screen.fill("purple")
         box.draw()
+        drawFps(screen, font, clock)
         for p in particles:
             p.draw(screen)
 
