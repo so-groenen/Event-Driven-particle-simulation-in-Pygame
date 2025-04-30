@@ -11,7 +11,7 @@ def drawFps(screen: pygame.Surface, font: pygame.Font):
     fps   = str(int(clock.get_fps()))
     fps_t = font.render(fps , 1, pygame.Color("RED"))
     screen.blit(fps_t,(0,0))
-     
+
 debug.DEBUG = False
 if __name__ == "__main__":
 
@@ -20,97 +20,96 @@ if __name__ == "__main__":
     screen              = pygame.display.set_mode((1024, 480))
     clock               = pygame.time.Clock()
     running: bool       = True
-    fps: float          = 60
-    radius: float       = 5
+    fps: float          = 10000.0
+    dt: float           = 1.0 / fps
+    radius: float       = 2.0
     systemTime: float   = 0.0
-    dt: float           = 0.0    
-    particleNumber: int = 300
-    minVel: float       = -20
-    maxVel: float       = 20 
+    particleNumber: int = 750
+    minVel: float       = -200.0
+    maxVel: float       = 200.0 
     
     screen_size   = Vector2    (screen.get_size())
     box           = BoundingBox(screen    = screen,
                                 topLeft   = 0.1*screen_size,
                                 color     = "red",
                                 thickness = 5)
-     
+    
     particles      = [Particle(position = Vector2(0, 0),
                                 velocity = Particle.getRandVelocity(minVel, maxVel),
                                 color    = "blue",
                                 radius   = radius) 
                       for _ in range(particleNumber)]
 
-    # Set to 10: use the setPrecision method to change it. It is 1E-10 initially.
-    PrecisionDecimalPlaces  = particles[0].getPrecisionDecimalPlaces() 
-    
     Particle.MonteCarloSortInBox(particles, box)
     Particle.removeCenterOfMass(particles)
-    collisionQueue = CollisionSchedule()
-    
-    lastColTime    = 0
-    colTime        = 0
 
+    collisionQueue = CollisionSchedule()
+    lastColTime    = 0
     for p in particles:
         p.computeBoxCollisionTime(box, systemTime)
         p.computeParticleCollisionTime(particles, systemTime)
         p.setCollisionType()
         collisionQueue.push(p)
     
-    # First event:
     collisionParticle = collisionQueue.pop()
-    print("Simulation Start.")
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Event managing: We only draw Wall collisions & valid particle collisions, hence we loop until we get one.
-        while True:
-            collisionTime = collisionParticle.getCollisionTime()
-            dt            = round(collisionTime-lastColTime, PrecisionDecimalPlaces) 
-            systemTime   += dt
-            for p in particles:
-               p.update(dt)
-     
+        for p in particles:
+            p.update(dt)
+
+
+        if (systemTime + dt) > collisionParticle.getCollisionTime():
+            # Handle priority collision depending if it is a wall reflection || particle collision
+            debug.logMsg(f"time since last collision = {collisionParticle.getCollisionTime()-lastColTime:.15f}, dt = {dt}")
+            lastColTime = collisionParticle.getCollisionTime()
             if collisionParticle.collisionType == CollisionType.WALL:
-                debug.logMsg("WALL COLLISION")
                 collisionParticle.resolveBoxCollision(box)
-                collisionParticle.computeNextEvent(particles, box, systemTime)
-                
-                collisionParticle = collisionQueue.pushPop(collisionParticle)
-                lastColTime       = systemTime
-                break
             elif collisionParticle.collisionType == CollisionType.PARTICLE:
                 # Check if partner particle has not been updated in the meantime
-                if collisionParticle.isParticleCollisionValid():
-                    debug.logMsg("PARTICLE COLLISION")
+                if  collisionParticle.isParticleCollisionValid():
+
+                    # resolve particle Collision (also handles partner velocity change)
                     collisionParticle.resolveParticleCollision()    
-                    partner = collisionParticle.getCollisionPartner()         
-                        
-                    partner.computeNextEvent(particles, box, systemTime)
+
+                    # Record collision time for partner collisions...
+                    partner = collisionParticle.getCollisionPartner()                    
+                    partner.setlastUpdatedTime(systemTime)
+                    
+                    # & compute futur collisions for partner:
+                    partner.computeBoxCollisionTime(box, systemTime)
+                    partner.computeParticleCollisionTime(particles, systemTime)
+                    partner.setCollisionType()
+                    
+                    # rearrange Queue
                     collisionQueue.heapify()
                     
-                    collisionParticle.computeNextEvent(particles, box, systemTime)
-                    collisionParticle = collisionQueue.pushPop(collisionParticle)
-                    lastColTime       = systemTime
-                    break
-                else:
-                    debug.logMsg("INVALID PARTICLE COLLISION")  
-                    debug.showCollisionSchedule(dt, collisionQueue, collisionParticle)
-                    
-                    collisionParticle.computeNextEvent(particles, box, systemTime)
-                    collisionParticle = collisionQueue.pushPop(collisionParticle)
-                    lastColTime       = systemTime
+                
+            # record time of last event, important for comparing collision validity
+            collisionParticle.setlastUpdatedTime(systemTime)
+            
+            # Compute new collision time for this particle
+            collisionParticle.computeBoxCollisionTime(box, systemTime)
+            collisionParticle.computeParticleCollisionTime(particles, systemTime)
+            collisionParticle.setCollisionType()
+            
+            # Put "old" particle back in & get "new" particle with highest priority:
+            collisionParticle = collisionQueue.pushPop(collisionParticle)
+    
+   
 
         screen.fill("purple")
         box.draw()
         drawFps(screen, font)
-        # Particle.drawEnergyAvg(screen, font, particles, (screen_size.x/2, 0))
+        Particle.drawEnergyAvg(screen, font, particles, (screen_size.x/2, 0))
 
         for p in particles:
             p.draw(screen)
                     
         pygame.display.flip()
-        clock.tick(fps)
 
+        clock.tick(fps)
+        systemTime += dt
     pygame.quit()

@@ -6,8 +6,7 @@ from pygame.typing import ColorLike
 from collisionModules import WallSide, CollisionType, ParticleCollision, WallCollision
 from boundingBox import BoundingBox
 
-# PRECISION = 1E-10
-# PRECISION_NUMBER = int(np.log10(1/PRECISION))
+
 class Particle:
     precision = 1E-10
     
@@ -18,15 +17,12 @@ class Particle:
                  radius: float      = 20.0,
                  mass: float        = 1):
 
-        # print(f"Particle: time measurment precision up to {self.precision}.")
-        # print(f"Particle:  = {self.precisionDecimalPlaces} decimal places.")
-
         self.position = position
         self.velocity = velocity
         self.radius   = radius
         self.color    = color
 
-        self.lastCollisionTime = 0
+        self.lastUpdatedTime = 0  #lastUpdatedTime
         self.mass              = mass
         self.collisionType     = CollisionType.WALL
         self.wallCollision     = WallCollision()
@@ -34,7 +30,7 @@ class Particle:
     
     def setPrecision(self, precision):
         self.precision = precision
-        print(f"Particle: Precision set to {self.precision}")
+
     
     def getPrecision(self) -> float:
         return self.precision
@@ -49,11 +45,8 @@ class Particle:
     # Overload < && > operators for priority Queue/heapq.
     def __gt__(self, other: Particle):
         return self.getCollisionTime() > other.getCollisionTime()
-        # return self.getCollisionTime() - other.getCollisionTime() > self.precision
-
 
     def __lt__(self, other: Particle):
-        
         return self.getCollisionTime() < other.getCollisionTime()
 
     
@@ -71,8 +64,8 @@ class Particle:
         minDist = (self.radius   + other.radius)
         return (dist <= minDist)
         
-    def setLastCollisionTime(self, systemTime: float) -> None:
-        self.lastCollisionTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
+    def setlastUpdatedTime(self, systemTime: float) -> None:
+        self.lastUpdatedTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
 
         
     def setCollisionType(self) -> None:
@@ -154,12 +147,12 @@ class Particle:
                 
     def isParticleCollisionValid(self) -> bool:
         partnerExist: bool   = (self.particleCollision.partner != None)
-        hasBeenUpdated: bool = (self.lastCollisionTime >= self.particleCollision.partner.lastCollisionTime) #Precision is set when defining lastcollisionTime
+        hasBeenUpdated: bool = (self.lastUpdatedTime >= self.particleCollision.partner.lastUpdatedTime) #Precision is set when defining lastUpdatedTime
         return (partnerExist and hasBeenUpdated)
         
     def computeNextEvent(self, particles: list[Particle], box: BoundingBox, systemTime: float):
         # record currentTime...
-        self.setLastCollisionTime(systemTime)
+        self.setlastUpdatedTime(systemTime)
         
         # ...& compute futur collisions
         self.computeBoxCollisionTime(box, systemTime)
@@ -204,7 +197,7 @@ class Particle:
             
     @classmethod
     def getRandVelocity(cls, low: float, high: float) -> Vector2:
-        x = np.random.randint(low, high)
+        x = np.random.randint(low, high) #I should change this to random uniform low + (high-low)*randuniform([0,1])
         y = np.random.randint(low, high)
         return Vector2(x, y)
 
