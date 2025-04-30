@@ -64,7 +64,7 @@ class Particle:
         minDist = (self.radius   + other.radius)
         return (dist <= minDist)
         
-    def setlastUpdatedTime(self, systemTime: float) -> None:
+    def setLastUpdatedTime(self, systemTime: float) -> None:
         self.lastUpdatedTime = round(systemTime, self.getPrecisionDecimalPlaces()) 
 
         
