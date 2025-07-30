@@ -1,10 +1,10 @@
-# PygameEventDrivenCollisions
+# Event driven particle collisions - a Python toy model using Pygame-CE
 Event driven hard sphere elastic collisions using python Pygame-CE
 
 A small Pygame prototype to showcase Event driven hard sphere particle collisions.
 
 In the basic "time based" collisions, all pairs of particles are checked at all times for possible collisions (i.e. overlap), and handled right away.\
-This introduces lots of looping over many particles pairs, even though particle will spend most of their time moving in straight line.
+This introduces lots of looping over many particles pairs, even though particle will spend most of their time moving in straight line. 
 
 In contrast, in "event driven" collisions, a priority queue (for example using a "heap" implementation) of all particle collisions is created BEFORE the simulation start. Particles store information about their "next collision time", the corresponding "partner particle", as well as a "last updated time".\
 The top priority "collision event" (ie, the particle with smallest collision time / first particle in the queue) is poped from the queue and the relevant particle-pair collision is handled.
